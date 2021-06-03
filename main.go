@@ -17,18 +17,16 @@ func main() {
 		panic(err)
 	}
 
+	db.AutoMigrate(&model.User{})
+
 	if err := createSuperUser(db); err != nil {
 		panic(err)
 	}
-
-	db.AutoMigrate(&model.User{})
 
 	jwtService := service.NewJWTService("lHMZ3XtB4E7M2XEXlp81R8Pm8IQmU8rrcZoH4Bzfo0dQq2nswUttpsblGSVh1lAXDDDpRYXDVVoU8W1u5kx2zilDsb6hoTsXErrfIbvRtXC6Ps5TxqZshFWfsfuA03zx")
 	auth := controller.NewAuth(db, jwtService)
 
 	userRoot := middleware.UserLevel(model.UserRoot)
-	// userManager := middleware.UserLevel(model.UserManager)
-	// userCommon := middleware.UserLevel(model.UserCommon)
 
 	app := gin.Default()
 	app.POST("/login", auth.Login)
@@ -48,8 +46,8 @@ func main() {
 func createSuperUser(db *gorm.DB) error {
 	var count int64
 
-	if db.Model(model.User{}).Count(&count).Error != nil {
-
+	if err := db.Model(model.User{}).Count(&count).Error; err != nil {
+		return err
 	}
 
 	if count > 0 {
