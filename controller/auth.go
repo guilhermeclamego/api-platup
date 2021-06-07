@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/guilhermeclamego/api-platup/model"
@@ -26,6 +27,7 @@ func (a *Auth) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Println(">>> ShouldBindJSON: ", err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -33,17 +35,20 @@ func (a *Auth) Login(c *gin.Context) {
 	var user model.User
 
 	if err := a.db.Where("username=? AND deleted_at IS NULL", dto.Username).First(&user).Error; err != nil {
+		log.Println(">>> select: ", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	if !user.CheckPassword(dto.Password) {
+		log.Println(">>> CheckPassword: error")
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	token, err := a.jwt.GenerateToken(user.ID)
 	if err != nil {
+		log.Println(">>> GenerateToken: ", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
